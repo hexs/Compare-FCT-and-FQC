@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> - FactoryWeb</title>
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/site.css?v=w4CzmN-u8GcJQ4z8Ic6JEu6FMlZdUUaUG3PL01VpJUE">
+    <link rel="stylesheet" href="/FactoryWeb.styles.css?v=3Thz5LfZL2mk-X04NTrtstB7hU_ezWDNQ0Dra19Ahs4">
+</head>
+<body>
+<div b-heqmulhy53="" class="d-flex position-relative">
+    <div b-heqmulhy53="" id="sidebar" class="ios6-sidebar p-3 vh-100 position-sticky top-0 collapsed"
+         style="width: 250px;">
+        <h4 b-heqmulhy53="">FactoryWeb</h4>
+        <hr b-heqmulhy53="">
+        <ul b-heqmulhy53="" class="nav flex-column">
+            <li b-heqmulhy53="" class="nav-item mb-2">
+                <a class="nav-link text-white" href="/">
+                    Dashboard
+                </a>
+            </li>
+            <li b-heqmulhy53="" class="nav-item mb-2">
+                <a class="nav-link text-white" href="/OQC/List">
+                    OQC Scan Job
+                </a>
+            </li>
+            <li b-heqmulhy53="" class="nav-item mb-2">
+                <a class="nav-link text-white" href="/OQC/History">
+                    OQC History
+                </a>
+            </li>
+            <li b-heqmulhy53="" class="nav-item mb-2">
+                <a class="nav-link text-white" href="/Identity/Account/Manage/ChangePassword">
+                    Change Password
+                </a>
+            </li>
+            <li b-heqmulhy53="" class="nav-item mt-4">
+                <form class="form-inline" action="/Identity/Account/Logout?returnUrl=%2F" method="post">
+                    <button b-heqmulhy53="" type="submit" class="btn btn-danger w-100">
+                        Logout
+                    </button>
+                    <input name="__RequestVerificationToken" type="hidden"
+                           value="CfDJ8E6LF8tckkJAgURWrGnIJHY6fc4weUe2_z8nJX4nqKnXYq_UXm92OD0dAWS3oO8YMmd6kN3dLc_7_zxex8fAK_VkLk-dJkH22FkBL9RKSklp4wCdKrgRa0jG3v77VvIERZ88Rw3b3L8LuY0Jh18pBkwvQO7LTNyYXx7ouO4MSd-bWYS4ODZxNV0ypWV_PNSZww">
+                </form>
+            </li>
+        </ul>
+    </div>
+    <div b-heqmulhy53="" class="main-content-wrapper flex-grow-1">
+        <div b-heqmulhy53="" class="ios6-top-bar d-flex align-items-center px-3">
+            <button b-heqmulhy53="" id="toggle-btn" class="btn-ios-action">
+                ☰ Menu
+            </button>
+            <span b-heqmulhy53="" class="ms-3 fw-bold text-white"></span>
+        </div>
+        <div b-heqmulhy53="" class="container-fluid p-4">
+
+            <h2>OQC Scan</h2>
+            <div class="mb-3">
+                <a class="btn btn-secondary" href="/OQC/List">
+                    ← BACK TO MAIN
+                </a>
+            </div>
+            <hr>
+            <!-- JOB INFO -->
+            <div class="card p-3 mb-3 shadow-sm">
+                <h4>WorkOrder: 1111</h4>
+                <p><b>Customer:</b> ALPHA</p>
+                <p><b>Model:</b> 1YH77-E0300-0-002</p>
+                <h3 id="progressText" class="text-primary">10 / 1000</h3>
+                <div class="progress" style="height: 25px;">
+                    <div id="progressBar" class="progress-bar bg-success" style="width: 1%;">
+                    </div>
+                </div>
+            </div>
+            <!-- SCAN BOX -->
+            <div class="card p-3 mb-3 shadow-sm">
+                <input type="hidden" id="jobId" value="749">
+                <label>Scan Serial Number</label>
+                <input type="text" id="scanInput" class="form-control form-control-lg" autofocus="" autocomplete="off">
+            </div>
+            <!-- RESULT -->
+            <div class="card p-3 shadow-sm">
+                <h4>Scan Result</h4>
+                <div id="result" style="max-height:250px; overflow:auto;"></div>
+            </div>
+            <div class="alert alert-info">
+                Progress :
+                <span id="total">10</span>
+                /
+                <span id="target">1000</span>
+            </div>
+
+        </div>
+    </div>
+</div>
+<footer b-heqmulhy53="" class="border-top footer text-muted">
+    <div b-heqmulhy53="" class="container-fluid text-center">
+        © 2026 - FactoryWeb - <a href="/Home/Privacy">Privacy</a>
+    </div>
+</footer>
+<script src="/lib/jquery/dist/jquery.min.js"></script>
+<script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/site.js?v=hRQyftXiu1lLX2P9Ly9xa4gHJgLeR1uGN5qegUobtGo"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+<script>
+    const input = document.getElementById("scanInput");
+    const result = document.getElementById("result");
+    const progressText = document.getElementById("progressText");
+    const progressBar = document.getElementById("progressBar");
+    const jobId = document.getElementById("jobId").value;
+    let isCompleted = false;
+
+    // ======================
+    // SIGNALR
+    // ======================
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/scanHub")
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    connection.start()
+        .then(() => console.log("SignalR Connected"))
+        .catch(err => console.error(err));
+
+    connection.on("ReceiveScanUpdate", function (receiveJobId, total, target, status) {
+        if (parseInt(receiveJobId) !== parseInt(jobId))
+            return;
+        updateProgress(total, target);
+        result.insertAdjacentHTML(
+            "afterbegin",
+            `<div class="text-info">${total}/${target} | ${status}</div>`
+        );
+        if (status === "COMPLETE" && !isCompleted) {
+            isCompleted = true;
+            input.disabled = true;
+            setTimeout(() => {
+                alert("JOB COMPLETE");
+                window.location.href = "/OQC/Detail/" + jobId;
+            }, 300);
+        }
+    });
+
+    // ======================
+    // PROGRESS BAR
+    // ======================
+    function updateProgress(total, target) {
+        progressText.innerText = total + " / " + target;
+        document.getElementById("total").innerText = total;
+        document.getElementById("target").innerText = target;
+
+        let percent = Math.min(100, (total / target) * 100);
+        progressBar.style.width = percent + "%";
+
+        const btnComplete = document.getElementById("btnComplete");
+        if (btnComplete) {
+            if (total > 0) {
+                btnComplete.disabled = false;
+                btnComplete.classList.remove("btn-secondary");
+                btnComplete.classList.add("btn-success");
+            } else {
+                btnComplete.disabled = true;
+                btnComplete.classList.remove("btn-success");
+                btnComplete.classList.add("btn-secondary");
+            }
+        }
+    }
+
+    // ======================
+    // SCAN
+    // ======================
+    input.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter")
+            return;
+        e.preventDefault();
+        if (isCompleted)
+            return;
+
+        let serial = input.value.trim();
+        if (!serial)
+            return;
+
+
+        fetch('/OQC/AddScan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `OQCJobId=${jobId}&serialNumber=${encodeURIComponent(serial)}`
+        })
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(t => {
+                        throw t;
+                    });
+                }
+                return res.json();
+            })
+            .then(data => {
+                result.insertAdjacentHTML(
+                    "afterbegin",
+                    `<div class="text-success fw-bold">✔ ${serial}</div>`
+                );
+                updateProgress(data.total, data.target);
+                input.value = "";
+                input.focus();
+                if (data.status === "COMPLETE" && !isCompleted) {
+                    isCompleted = true;
+                    input.disabled = true;
+                    alert("JOB COMPLETE");
+                    window.location.href = "/OQC/Detail/" + jobId;
+                    return;
+                }
+            })
+            .catch(err => {
+                alert(err);
+                input.value = "";
+                input.focus();
+            });
+    });
+
+    // ======================
+    // FORCE COMPLETE
+    // ======================
+    function forceComplete() {
+        let currentTotal = parseInt(document.getElementById("total").innerText);
+        if (currentTotal <= 0) {
+            alert("NO SCAN DATA");
+            return;
+        }
+        let reason = prompt("Complete Reason");
+        if (!reason)
+            return;
+
+        fetch('/OQC/ForceComplete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `id=${jobId}&reason=${encodeURIComponent(reason)}`
+        })
+            .then(r => {
+                if (!r.ok)
+                    throw "FORCE COMPLETE FAILED";
+                return r.text();
+            })
+            .then(() => {
+                alert("JOB COMPLETE");
+                window.location.href = "/OQC/Detail/" + jobId;
+            })
+            .catch(err => {
+                alert(err);
+            });
+    }
+
+    // ======================
+    // CANCEL
+    // ======================
+    function cancelJob() {
+        if (!confirm("Cancel Job ?"))
+            return;
+
+        fetch('/OQC/Cancel', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `id=${jobId}`
+        })
+            .then(() => {
+                alert("JOB CANCELED");
+                window.location.href = "/OQC/List";
+            });
+    }
+
+    // ======================
+    // POLLING BACKUP
+    // ======================
+    let polling = setInterval(() => {
+        if (isCompleted) {
+            clearInterval(polling);
+            return;
+        }
+        fetch(`/OQC/GetProgress?id=${jobId}`)
+            .then(r => r.json())
+            .then(data => {
+                updateProgress(data.total, data.target);
+                if (data.status === "COMPLETE" && !isCompleted) {
+                    isCompleted = true;
+                    clearInterval(polling);
+                    window.location.href = "/OQC/Detail/" + jobId;
+                }
+            });
+    }, 3000);
+
+    // ======================
+    // STARTUP
+    // ======================
+    window.onload = () => {
+        input.focus();
+        fetch(`/OQC/GetProgress?id=${jobId}`)
+            .then(r => r.json())
+            .then(data => {
+                updateProgress(data.total, data.target);
+            });
+    };
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggleBtn = document.getElementById("toggle-btn");
+        const sidebar = document.getElementById("sidebar");
+
+        toggleBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            sidebar.classList.toggle("collapsed");
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!sidebar.contains(e.target) && e.target !== toggleBtn) {
+                sidebar.classList.add("collapsed");
+            }
+        });
+    });
+</script>
+</body>
+</html>
