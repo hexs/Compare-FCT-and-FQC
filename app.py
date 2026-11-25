@@ -9,6 +9,8 @@ from datetime import datetime
 import psycopg2
 import requests
 from flask import Flask, jsonify
+from hexss.env import env
+env.reload()
 
 # ---------------- Config ----------------
 HOSTS = [
@@ -337,3 +339,6 @@ if __name__ == '__main__':
     manager.add_task(server, args=(data,), task_id="server", join=False)
     manager.start_all()
     manager.join_all()
+
+    while True:
+        time.sleep(1)
